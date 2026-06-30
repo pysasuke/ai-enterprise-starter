@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-enterprise-starter
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/aistarter}
+    username: ${SPRING_DATASOURCE_USERNAME:aistarter}
+    password: ${SPRING_DATASOURCE_PASSWORD:aistarter}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+  ai:
+    openai:
+      api-key: ${DASHSCOPE_API_KEY:${OPENAI_API_KEY:sk-your-key}}
+      base-url: ${OPENAI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:qwen-plus}
+          temperature: 0.7
+    mcp:
+      client:
+        enabled: ${MCP_CLIENT_ENABLED:false}
+        type: SYNC
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:ai-enterprise-starter-jwt-secret-key-change-me-in-production}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+logging:
+  level:
+    root: INFO
+    com.aistarter: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn

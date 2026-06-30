@@ -1,0 +1,27 @@
+### Tool 列表
+GET http://localhost:8080/api/tools
+
+### 用户登录
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### AI 聊天
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+  "message": "你好"
+}
+
+### Database Analyze Agent
+POST http://localhost:8080/api/agent/database
+Content-Type: application/json
+
+{
+  "question": "orders表按user_id查询为什么慢？"
+}

@@ -1,0 +1,14 @@
+---
+description: AI Enterprise Starter Java 开发规范
+globs: **/*.java
+alwaysApply: false
+---
+
+# Java 开发规范
+
+- 使用 Java 21，遵循 Spring Boot 3.4 最佳实践
+- 模块边界：common → auth/ai/mcp → agent → web → demo
+- API 统一前缀 `/api`，认证使用 JWT Bearer Token
+- 异常统一抛出 `BusinessException`，由 `GlobalExceptionHandler` 处理
+- 新增 Agent 放在 `starter-agent`，新增 Tool 在 `starter-mcp` 注册
+- 单元测试覆盖率目标：核心 Service 必须有测试

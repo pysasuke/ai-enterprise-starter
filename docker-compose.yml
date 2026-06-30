@@ -1,0 +1,3 @@
+# 项目根目录快捷入口，等价于 docker/docker-compose.yml
+include:
+  - path: docker/docker-compose.yml

@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aistarter-postgres
+    environment:
+      POSTGRES_DB: aistarter
+      POSTGRES_USER: aistarter
+      POSTGRES_PASSWORD: aistarter
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aistarter -d aistarter"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: aistarter-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: aistarter-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aistarter
+      SPRING_DATASOURCE_USERNAME: aistarter
+      SPRING_DATASOURCE_PASSWORD: aistarter
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-${DASHSCOPE_API_KEY}}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode}
+      OPENAI_MODEL: ${OPENAI_MODEL:-qwen-plus}
+      JWT_SECRET: ${JWT_SECRET:-ai-enterprise-starter-jwt-secret-key-change-me-in-production}
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
