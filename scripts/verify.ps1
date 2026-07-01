@@ -1,9 +1,10 @@
 # V1 验收脚本（PowerShell）
-# 用法: .\scripts\verify.ps1 [-BaseUrl http://localhost:8080] [-SkipAi]
+# 用法: .\scripts\verify.ps1 [-BaseUrl http://localhost:8080] [-SkipAi] [-SkipRag]
 
 param(
     [string]$BaseUrl = "http://localhost:8080",
-    [switch]$SkipAi
+    [switch]$SkipAi,
+    [switch]$SkipRag
 )
 
 $passed = 0
@@ -59,6 +60,36 @@ if (-not $SkipAi) {
         $r = Invoke-RestMethod -Uri "$BaseUrl/api/agent/database" -Method Post `
             -ContentType "application/json; charset=utf-8" -Body $body
         if (-not $r.analysis) { throw "empty analysis" }
+    }
+}
+
+if (-not $SkipRag) {
+    Test-Endpoint "POST /api/rag/documents" {
+        $filePath = Join-Path $PSScriptRoot "..\examples\refund-policy.md"
+        if (-not (Test-Path $filePath)) { throw "missing examples/refund-policy.md" }
+        $boundary = [System.Guid]::NewGuid().ToString()
+        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
+        $bodyLines = @(
+            "--$boundary",
+            'Content-Disposition: form-data; name="file"; filename="refund-policy.md"',
+            'Content-Type: text/markdown',
+            '',
+            [System.Text.Encoding]::UTF8.GetString($fileBytes),
+            "--$boundary--"
+        )
+        $body = $bodyLines -join "`r`n"
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/rag/documents" -Method Post `
+            -ContentType "multipart/form-data; boundary=$boundary" `
+            -Body ([System.Text.Encoding]::UTF8.GetBytes($body)) `
+            -TimeoutSec 180
+        if (-not $r.id) { throw "upload failed" }
+    }
+
+    Test-Endpoint "POST /api/rag/chat" {
+        $body = [System.Text.Encoding]::UTF8.GetBytes('{"question":"退款政策是什么？","topK":3}')
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/rag/chat" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 180
+        if (-not $r.answer) { throw "empty answer" }
     }
 }
 

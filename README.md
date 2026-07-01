@@ -9,20 +9,21 @@
 </p>
 
 <p align="center">
-  开箱即用的 Spring AI 企业开发脚手架 — Chat · MCP · Database Agent · JWT · Docker
+  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · MCP · Database Agent · JWT · Docker
 </p>
 
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Demo" width="720"/>
 </p>
 
-## 功能特性（V1）
+## 功能特性
 
 - Spring Boot 3.4 多模块脚手架
 - Spring AI Chat（OpenAI 兼容，默认通义千问）
+- **RAG 知识库**（txt/md/pdf/docx 上传 + pgvector 检索问答）
 - Database Analyze Agent（自动读取 Schema/索引并给出 SQL 优化建议）
 - JWT 认证、Redis 会话记忆
-- PostgreSQL + Docker Compose 一键启动
+- PostgreSQL（pgvector）+ Redis + Docker Compose 一键启动
 - Knife4j API 文档
 
 ## 快速启动
@@ -46,6 +47,7 @@ cp .env.example .env
 DASHSCOPE_API_KEY=sk-your-key
 OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode
 OPENAI_MODEL=qwen-plus
+EMBEDDING_MODEL=text-embedding-v3
 ```
 
 > base-url **不要**带 `/v1`，Spring AI 会自动拼接。
@@ -53,7 +55,7 @@ OPENAI_MODEL=qwen-plus
 ### 3. 一键启动
 
 ```bash
-# 仅基础设施
+# 仅基础设施（PostgreSQL 使用 pgvector 镜像）
 docker compose up -d postgres redis
 
 # 构建并运行
@@ -95,12 +97,15 @@ flowchart TB
     Web --> AI[starter-ai]
     Web --> MCP[starter-mcp]
     Web --> Agent[starter-agent]
+    Web --> Rag[starter-rag]
     Auth --> Common[starter-common]
     AI --> Common
     MCP --> Common
     Agent --> Common
+    Rag --> Common
     AI --> Redis[(Redis)]
-    Agent --> PG[(PostgreSQL)]
+    Agent --> PG[(PostgreSQL + pgvector)]
+    Rag --> PG
     AI --> LLM[DashScope / OpenAI]
 ```
 
@@ -112,8 +117,32 @@ flowchart TB
 | GET | `/api/tools` | Tool 列表 |
 | POST | `/api/agent/database` | Database Analyze Agent |
 | POST | `/api/auth/login` | JWT 登录 |
+| POST | `/api/rag/documents` | 上传知识库文档 |
+| GET | `/api/rag/documents` | 文档列表 |
+| POST | `/api/rag/chat` | RAG 知识库问答 |
 
-示例见 [examples/api-examples.http](./examples/api-examples.http)
+示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)
+
+## RAG 快速体验
+
+```bash
+# 确保 Postgres 已启用 pgvector（首次升级需重建 volume）
+docker compose down -v && docker compose up -d postgres redis
+
+mvn install -DskipTests
+# 加载 .env 后启动
+java -jar starter-demo/target/starter-demo-0.1.0-SNAPSHOT.jar
+```
+
+```bash
+# 上传示例文档
+curl -F "file=@examples/refund-policy.md" http://localhost:8080/api/rag/documents
+
+# RAG 问答
+curl -X POST http://localhost:8080/api/rag/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"退款政策是什么？","topK":5}'
+```
 
 ## 模块说明
 
@@ -124,6 +153,7 @@ flowchart TB
 | starter-ai | Chat、Prompt、Redis Memory |
 | starter-mcp | MCP Tool 注册与列表 |
 | starter-agent | Database Analyze Agent |
+| starter-rag | RAG 知识库（解析、向量、问答） |
 | starter-web | Controller、全局异常、Swagger |
 | starter-demo | 启动入口 |
 
@@ -149,7 +179,7 @@ java -jar starter-demo/target/starter-demo-0.1.0-SNAPSHOT.jar
 ## 测试
 
 ```bash
-mvn verify   # 32 个单元测试
+mvn verify   # 单元测试（含 RAG 模块）
 ```
 
 ## License

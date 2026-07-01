@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: aistarter-postgres
     environment:
       POSTGRES_DB: aistarter
@@ -48,6 +48,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-${DASHSCOPE_API_KEY}}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode}
       OPENAI_MODEL: ${OPENAI_MODEL:-qwen-plus}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v3}
       JWT_SECRET: ${JWT_SECRET:-ai-enterprise-starter-jwt-secret-key-change-me-in-production}
     ports:
       - "8080:8080"

@@ -36,3 +36,6 @@ replay_pid*
 # Internal dev docs (local only, not for public repo)
 docs/internal/
 docs/superpowers/
+
+# RAG uploads (local only)
+uploads/rag/

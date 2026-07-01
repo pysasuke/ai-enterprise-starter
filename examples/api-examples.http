@@ -18,6 +18,29 @@ Content-Type: application/json
   "message": "你好"
 }
 
+### RAG — 上传文档
+POST http://localhost:8080/api/rag/documents
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="refund-policy.md"
+Content-Type: text/markdown
+
+< ./refund-policy.md
+--WebAppBoundary--
+
+### RAG — 列出文档
+GET http://localhost:8080/api/rag/documents
+
+### RAG — 知识库问答
+POST http://localhost:8080/api/rag/chat
+Content-Type: application/json
+
+{
+  "question": "退款政策是什么？",
+  "topK": 3
+}
+
 ### Database Analyze Agent
 POST http://localhost:8080/api/agent/database
 Content-Type: application/json
