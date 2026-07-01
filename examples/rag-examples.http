@@ -1,0 +1,25 @@
+### 上传文档（txt/md/pdf/docx）
+POST http://localhost:8080/api/rag/documents
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="refund-policy.md"
+Content-Type: text/markdown
+
+< ./refund-policy.md
+--WebAppBoundary--
+
+### 列出文档
+GET http://localhost:8080/api/rag/documents
+
+### RAG 问答
+POST http://localhost:8080/api/rag/chat
+Content-Type: application/json
+
+{
+  "question": "退款政策是什么？",
+  "topK": 5
+}
+
+### 删除文档
+DELETE http://localhost:8080/api/rag/documents/1
