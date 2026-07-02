@@ -1,5 +1,8 @@
 package com.aistarter.rag.service;
 
+import com.aistarter.prompt.entity.PromptType;
+import com.aistarter.prompt.service.PromptFallbacks;
+import com.aistarter.prompt.service.PromptService;
 import com.aistarter.rag.dto.RagChatRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +20,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +32,9 @@ class RagChatServiceTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private ChatClient.Builder chatClientBuilder;
 
+    @Mock
+    private PromptService promptService;
+
     @InjectMocks
     private RagChatService ragChatService;
 
@@ -38,6 +45,10 @@ class RagChatServiceTest {
                 "filename", "policy.md",
                 "collection_id", "default"));
         when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(match));
+        when(promptService.render(eq(PromptFallbacks.KEY_RAG_CHAT), eq(PromptType.system), any()))
+                .thenReturn("system");
+        when(promptService.render(eq(PromptFallbacks.KEY_RAG_CHAT), eq(PromptType.user), any(Map.class)))
+                .thenReturn("user");
         when(chatClientBuilder.build().prompt().system(any(String.class)).user(any(String.class)).call().content())
                 .thenReturn("You can refund within 7 days.");
 

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · MCP · Database Agent · JWT · Docker
+  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · JWT · Docker
 </p>
 
 <p align="center">
@@ -21,6 +21,7 @@
 - Spring Boot 3.4 多模块脚手架
 - Spring AI Chat（OpenAI 兼容，默认通义千问）
 - **RAG 知识库**（txt/md/pdf/docx 上传 + pgvector 检索问答）
+- **Prompt 管理**（多版本模板 + `{{var}}` 渲染，Chat/Agent/RAG 可配置）
 - Database Analyze Agent（自动读取 Schema/索引并给出 SQL 优化建议）
 - JWT 认证、Redis 会话记忆
 - PostgreSQL（pgvector）+ Redis + Docker Compose 一键启动
@@ -98,14 +99,17 @@ flowchart TB
     Web --> MCP[starter-mcp]
     Web --> Agent[starter-agent]
     Web --> Rag[starter-rag]
+    Web --> Prompt[starter-prompt]
     Auth --> Common[starter-common]
     AI --> Common
     MCP --> Common
     Agent --> Common
     Rag --> Common
+    Prompt --> Common
     AI --> Redis[(Redis)]
     Agent --> PG[(PostgreSQL + pgvector)]
     Rag --> PG
+    Prompt --> PG
     AI --> LLM[DashScope / OpenAI]
 ```
 
@@ -120,8 +124,12 @@ flowchart TB
 | POST | `/api/rag/documents` | 上传知识库文档 |
 | GET | `/api/rag/documents` | 文档列表 |
 | POST | `/api/rag/chat` | RAG 知识库问答 |
+| GET | `/api/prompts` | Prompt 定义列表 |
+| POST | `/api/prompts/{key}/{type}/versions` | 创建 Prompt 新版本 |
+| PUT | `/api/prompts/{key}/{type}/active` | 设置生效版本 |
+| POST | `/api/prompts/render` | 预览模板渲染 |
 
-示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)
+示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)
 
 ## RAG 快速体验
 
@@ -144,6 +152,28 @@ curl -X POST http://localhost:8080/api/rag/chat \
   -d '{"question":"退款政策是什么？","topK":5}'
 ```
 
+## Prompt 快速体验
+
+应用启动后会自动 seed 默认 Prompt（`chat.system`、`database.agent`、`rag.chat`）。
+
+```bash
+# 列出 Prompt
+curl http://localhost:8080/api/prompts
+
+# 预览渲染
+curl -X POST http://localhost:8080/api/prompts/render \
+  -H "Content-Type: application/json" \
+  -d '{"key":"database.agent","type":"user","variables":{"question":"为什么慢？","schema":"orders","indexes":"idx_id"}}'
+
+# 创建新版本并设为生效
+curl -X POST http://localhost:8080/api/prompts/database.agent/system/versions \
+  -H "Content-Type: application/json" \
+  -d '{"content":"你是数据库专家，只给优化建议。"}'
+curl -X PUT http://localhost:8080/api/prompts/database.agent/system/active \
+  -H "Content-Type: application/json" \
+  -d '{"version":2}'
+```
+
 ## 模块说明
 
 | 模块 | 说明 |
@@ -154,6 +184,7 @@ curl -X POST http://localhost:8080/api/rag/chat \
 | starter-mcp | MCP Tool 注册与列表 |
 | starter-agent | Database Analyze Agent |
 | starter-rag | RAG 知识库（解析、向量、问答） |
+| starter-prompt | Prompt 版本管理与模板渲染 |
 | starter-web | Controller、全局异常、Swagger |
 | starter-demo | 启动入口 |
 
@@ -179,7 +210,7 @@ java -jar starter-demo/target/starter-demo-0.1.0-SNAPSHOT.jar
 ## 测试
 
 ```bash
-mvn verify   # 单元测试（含 RAG 模块）
+mvn verify   # 单元测试（含 RAG、Prompt 模块）
 ```
 
 ## License

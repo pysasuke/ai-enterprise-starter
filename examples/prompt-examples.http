@@ -1,0 +1,41 @@
+### 列出 Prompt 定义
+GET http://localhost:8080/api/prompts
+
+### 获取 database.agent user 模板
+GET http://localhost:8080/api/prompts/database.agent/user
+
+### 创建新版本
+POST http://localhost:8080/api/prompts/database.agent/user/versions
+Content-Type: application/json
+
+{
+  "content": "用户问题：{{question}}\n\nSchema：\n{{schema}}\n\n索引：\n{{indexes}}\n\n请分析。"
+}
+
+### 设为生效版本
+PUT http://localhost:8080/api/prompts/database.agent/user/active
+Content-Type: application/json
+
+{
+  "version": 2
+}
+
+### 预览渲染
+POST http://localhost:8080/api/prompts/render
+Content-Type: application/json
+
+{
+  "key": "database.agent",
+  "type": "user",
+  "variables": {
+    "question": "为什么慢？",
+    "schema": "orders(id)",
+    "indexes": "idx_orders_id"
+  }
+}
+
+### 列出版本历史
+GET http://localhost:8080/api/prompts/database.agent/user/versions
+
+### 删除非生效版本
+DELETE http://localhost:8080/api/prompts/database.agent/user/versions/1
