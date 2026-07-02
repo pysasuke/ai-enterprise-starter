@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, AppConstants.API_PREFIX + "/tools").permitAll()
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/agent/**").permitAll()
                         .requestMatchers(AppConstants.API_PREFIX + "/rag/**").permitAll()
+                        .requestMatchers(AppConstants.API_PREFIX + "/prompts/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

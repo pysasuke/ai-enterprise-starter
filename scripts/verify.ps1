@@ -1,10 +1,11 @@
 # V1 验收脚本（PowerShell）
-# 用法: .\scripts\verify.ps1 [-BaseUrl http://localhost:8080] [-SkipAi] [-SkipRag]
+# 用法: .\scripts\verify.ps1 [-BaseUrl http://localhost:8080] [-SkipAi] [-SkipRag] [-SkipPrompt]
 
 param(
     [string]$BaseUrl = "http://localhost:8080",
     [switch]$SkipAi,
-    [switch]$SkipRag
+    [switch]$SkipRag,
+    [switch]$SkipPrompt
 )
 
 $passed = 0
@@ -56,9 +57,10 @@ if (-not $SkipAi) {
     }
 
     Test-Endpoint "POST /api/agent/database" {
-        $body = [System.Text.Encoding]::UTF8.GetBytes('{"question":"orders表按user_id查询为什么慢？"}')
+        $json = @{ question = "Why is querying orders by user_id slow?" } | ConvertTo-Json -Compress
+        $body = [System.Text.Encoding]::UTF8.GetBytes($json)
         $r = Invoke-RestMethod -Uri "$BaseUrl/api/agent/database" -Method Post `
-            -ContentType "application/json; charset=utf-8" -Body $body
+            -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 120
         if (-not $r.analysis) { throw "empty analysis" }
     }
 }
@@ -90,6 +92,35 @@ if (-not $SkipRag) {
         $r = Invoke-RestMethod -Uri "$BaseUrl/api/rag/chat" -Method Post `
             -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 180
         if (-not $r.answer) { throw "empty answer" }
+    }
+}
+
+if (-not $SkipPrompt) {
+    Test-Endpoint "GET /api/prompts/database.agent/user" {
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/prompts/database.agent/user"
+        if (-not $r.key) { throw "missing prompt key" }
+        if ($r.activeVersion -lt 1) { throw "no active version" }
+    }
+
+    Test-Endpoint "POST /api/prompts/render" {
+        $body = [System.Text.Encoding]::UTF8.GetBytes(
+            '{"key":"database.agent","type":"user","variables":{"question":"test","schema":"s","indexes":"i"}}')
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/prompts/render" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $body
+        if (-not $r.rendered) { throw "empty rendered" }
+        if ($r.rendered -notmatch "test") { throw "variable not rendered" }
+    }
+
+    Test-Endpoint "POST+PUT /api/prompts version flow" {
+        $createBody = [System.Text.Encoding]::UTF8.GetBytes('{"content":"test {{question}}"}')
+        $created = Invoke-RestMethod -Uri "$BaseUrl/api/prompts/verify.test/user/versions" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $createBody
+        if (-not $created.version) { throw "create failed" }
+        $activeBody = [System.Text.Encoding]::UTF8.GetBytes("{`"version`":$($created.version)}")
+        Invoke-RestMethod -Uri "$BaseUrl/api/prompts/verify.test/user/active" -Method Put `
+            -ContentType "application/json; charset=utf-8" -Body $activeBody | Out-Null
+        $got = Invoke-RestMethod -Uri "$BaseUrl/api/prompts/verify.test/user"
+        if ($got.activeVersion -ne $created.version) { throw "active not updated" }
     }
 }
 

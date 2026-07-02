@@ -3,9 +3,14 @@ package com.aistarter.ai.service;
 import com.aistarter.ai.dto.ChatRequest;
 import com.aistarter.ai.dto.ChatResponse;
 import com.aistarter.ai.memory.ChatMemory;
+import com.aistarter.prompt.entity.PromptType;
+import com.aistarter.prompt.service.PromptFallbacks;
+import com.aistarter.prompt.service.PromptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +20,7 @@ public class ChatService {
 
     private final ChatClient.Builder chatClientBuilder;
     private final ChatMemory chatMemory;
+    private final PromptService promptService;
 
     public ChatResponse chat(ChatRequest request) {
         return chat(request, DEFAULT_SESSION);
@@ -27,9 +33,11 @@ public class ChatService {
         }
         promptBuilder.append("user:").append(request.getMessage());
 
-        String content = chatClientBuilder.build()
-                .prompt()
-                .user(promptBuilder.toString())
+        var spec = chatClientBuilder.build().prompt();
+        promptService.renderOptional(PromptFallbacks.KEY_CHAT, PromptType.system, Map.of())
+                .ifPresent(spec::system);
+
+        String content = spec.user(promptBuilder.toString())
                 .call()
                 .content();
 

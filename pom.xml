@@ -25,6 +25,7 @@
         <module>starter-mcp</module>
         <module>starter-agent</module>
         <module>starter-rag</module>
+        <module>starter-prompt</module>
         <module>starter-web</module>
         <module>starter-demo</module>
     </modules>
@@ -74,6 +75,11 @@
             <dependency>
                 <groupId>com.aistarter</groupId>
                 <artifactId>starter-rag</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aistarter</groupId>
+                <artifactId>starter-prompt</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

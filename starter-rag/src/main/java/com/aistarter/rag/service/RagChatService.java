@@ -1,5 +1,8 @@
 package com.aistarter.rag.service;
 
+import com.aistarter.prompt.entity.PromptType;
+import com.aistarter.prompt.service.PromptFallbacks;
+import com.aistarter.prompt.service.PromptService;
 import com.aistarter.rag.dto.RagChatRequest;
 import com.aistarter.rag.dto.RagChatResponse;
 import com.aistarter.rag.dto.RagSource;
@@ -20,14 +23,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RagChatService {
 
-    private static final String SYSTEM_PROMPT = """
-            你是企业知识库问答助手。仅根据提供的检索上下文回答问题。
-            如果上下文中没有足够信息，请明确说明不知道，不要编造。
-            回答应简洁、准确，必要时引用上下文中的要点。
-            """;
-
     private final VectorStore vectorStore;
     private final ChatClient.Builder chatClientBuilder;
+    private final PromptService promptService;
 
     public RagChatResponse chat(RagChatRequest request) {
         int topK = request.getTopK() > 0 ? request.getTopK() : 5;
@@ -39,16 +37,16 @@ public class RagChatService {
                 .build());
 
         String context = buildContext(matches);
-        String userPrompt = """
-                检索到的上下文：
-                %s
+        Map<String, Object> variables = Map.of(
+                "context", context,
+                "question", request.getQuestion());
 
-                用户问题：%s
-                """.formatted(context, request.getQuestion());
+        String systemPrompt = promptService.render(PromptFallbacks.KEY_RAG_CHAT, PromptType.system, Map.of());
+        String userPrompt = promptService.render(PromptFallbacks.KEY_RAG_CHAT, PromptType.user, variables);
 
         String answer = chatClientBuilder.build()
                 .prompt()
-                .system(SYSTEM_PROMPT)
+                .system(systemPrompt)
                 .user(userPrompt)
                 .call()
                 .content();
