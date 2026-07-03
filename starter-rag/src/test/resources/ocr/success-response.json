@@ -1,0 +1,9 @@
+{
+  "output": {
+    "choices": [{
+      "message": {
+        "content": [{"text": "退款政策：7天内可退"}]
+      }
+    }]
+  }
+}

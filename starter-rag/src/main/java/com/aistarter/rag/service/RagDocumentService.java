@@ -6,6 +6,7 @@ import com.aistarter.rag.dto.RagUploadResponse;
 import com.aistarter.rag.entity.RagDocument;
 import com.aistarter.rag.entity.RagDocumentStatus;
 import com.aistarter.rag.parser.DocumentParserFactory;
+import com.aistarter.rag.parser.ParseResult;
 import com.aistarter.rag.repository.RagDocumentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
@@ -50,7 +51,8 @@ public class RagDocumentService {
         document = documentRepository.save(document);
 
         try {
-            String text = parserFactory.parse(document.getContentType(), filename, inputStream);
+            ParseResult parsed = parserFactory.parse(document.getContentType(), filename, inputStream);
+            String text = parsed.text();
             if (text.isBlank()) {
                 throw new BusinessException("Document contains no extractable text");
             }
@@ -67,6 +69,7 @@ public class RagDocumentService {
                 metadata.put("document_id", documentId);
                 metadata.put("filename", filename);
                 metadata.put("collection_id", RagDocument.DEFAULT_COLLECTION);
+                metadata.putAll(parsed.metadata());
                 String chunkId = chunk.getId() != null ? chunk.getId() : UUID.randomUUID().toString();
                 enrichedChunks.add(new Document(chunkId, chunk.getText(), metadata));
             }

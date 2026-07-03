@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.Collectors;
 
+import java.util.Map;
+
 @Component
 public class DocxDocumentParser implements DocumentParser {
 
@@ -23,13 +25,14 @@ public class DocxDocumentParser implements DocumentParser {
     }
 
     @Override
-    public String parse(InputStream inputStream) throws IOException {
+    public ParseResult parse(InputStream inputStream) throws IOException {
         try (XWPFDocument document = new XWPFDocument(inputStream)) {
-            return document.getParagraphs().stream()
+            String text = document.getParagraphs().stream()
                     .map(XWPFParagraph::getText)
-                    .filter(text -> text != null && !text.isBlank())
+                    .filter(line -> line != null && !line.isBlank())
                     .collect(Collectors.joining("\n"))
                     .trim();
+            return ParseResult.of(text, Map.of("parser", "docx", "ocr_used", false));
         }
     }
 }

@@ -44,6 +44,14 @@ app:
   jwt:
     secret: ${JWT_SECRET:ai-enterprise-starter-jwt-secret-key-change-me-in-production}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  ocr:
+    enabled: ${OCR_ENABLED:false}
+    model: ${OCR_MODEL:qwen3.5-ocr}
+    api-key: ${DASHSCOPE_API_KEY:${OPENAI_API_KEY:}}
+    min-text-length: ${OCR_MIN_TEXT_LENGTH:50}
+    max-pages: ${OCR_MAX_PAGES:20}
+    page-timeout-seconds: ${OCR_PAGE_TIMEOUT:60}
+    document-timeout-seconds: ${OCR_DOCUMENT_TIMEOUT:300}
 
 logging:
   level:

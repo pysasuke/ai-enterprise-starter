@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import java.util.Map;
+
 @Component
 public class TxtMarkdownParser implements DocumentParser {
 
@@ -24,7 +26,8 @@ public class TxtMarkdownParser implements DocumentParser {
     }
 
     @Override
-    public String parse(InputStream inputStream) throws IOException {
-        return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8).trim();
+    public ParseResult parse(InputStream inputStream) throws IOException {
+        String text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8).trim();
+        return ParseResult.of(text, Map.of("parser", "txt-md", "ocr_used", false));
     }
 }

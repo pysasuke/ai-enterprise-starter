@@ -21,6 +21,7 @@
 - Spring Boot 3.4 多模块脚手架
 - Spring AI Chat（OpenAI 兼容，默认通义千问）
 - **RAG 知识库**（txt/md/pdf/docx 上传 + pgvector 检索问答）
+- **OCR 文档入库**（扫描 PDF / 图片 → DashScope OCR → RAG）
 - **Prompt 管理**（多版本模板 + `{{var}}` 渲染，Chat/Agent/RAG 可配置）
 - Database Analyze Agent（自动读取 Schema/索引并给出 SQL 优化建议）
 - JWT 认证、Redis 会话记忆
@@ -151,6 +152,21 @@ curl -X POST http://localhost:8080/api/rag/chat \
   -H "Content-Type: application/json" \
   -d '{"question":"退款政策是什么？","topK":5}'
 ```
+
+## OCR 文档入库
+
+扫描 PDF 或图片（png/jpg/webp）需开启 OCR（调用 DashScope **qwen3.5-ocr**，按次计费）：
+
+```bash
+# .env 中设置
+OCR_ENABLED=true
+# DASHSCOPE_API_KEY 与 Chat 共用
+
+# 上传图片示例
+curl -F "file=@examples/ocr-sample.png" http://localhost:8080/api/rag/documents
+```
+
+> 普通 PDF（可选中文字）仍走 PDFBox，不产生 OCR 费用。`verify.ps1` 支持 `-SkipOcr` 跳过 OCR 验收。
 
 ## Prompt 快速体验
 
