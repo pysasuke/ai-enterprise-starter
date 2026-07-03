@@ -1,8 +1,7 @@
 package com.aistarter.rag.service;
 
 import com.aistarter.common.exception.BusinessException;
-import com.aistarter.rag.dto.RagChatRequest;
-import com.aistarter.rag.dto.RagChatResponse;
+import com.aistarter.rag.parser.ParseResult;
 import com.aistarter.rag.entity.RagDocument;
 import com.aistarter.rag.entity.RagDocumentStatus;
 import com.aistarter.rag.parser.DocumentParserFactory;
@@ -19,6 +18,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,7 +55,8 @@ class RagDocumentServiceTest {
         saved.setStatus(RagDocumentStatus.INDEXING);
 
         when(documentRepository.save(any(RagDocument.class))).thenReturn(saved);
-        when(parserFactory.parse(any(), any(), any())).thenReturn("Refund within 7 days");
+        when(parserFactory.parse(any(), any(), any()))
+                .thenReturn(ParseResult.of("Refund within 7 days", Map.of("ocr_used", false, "parser", "txt-md")));
         when(textSplitter.split(any(Document.class))).thenReturn(List.of(new Document("chunk-1")));
 
         var response = ragDocumentService.ingest(

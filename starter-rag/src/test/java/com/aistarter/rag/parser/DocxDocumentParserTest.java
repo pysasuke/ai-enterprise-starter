@@ -26,7 +26,7 @@ class DocxDocumentParserTest {
             docxBytes = out.toByteArray();
         }
 
-        String text = parser.parse(new ByteArrayInputStream(docxBytes));
+        String text = parser.parse(new ByteArrayInputStream(docxBytes)).text();
         assertThat(text).contains("Enterprise knowledge base");
     }
 }

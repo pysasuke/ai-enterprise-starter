@@ -7,5 +7,5 @@ public interface DocumentParser {
 
     boolean supports(String contentType, String filename);
 
-    String parse(InputStream inputStream) throws IOException;
+    ParseResult parse(InputStream inputStream) throws IOException;
 }

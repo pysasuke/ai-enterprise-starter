@@ -21,7 +21,7 @@ class TxtMarkdownParserTest {
 
     @Test
     void parsesUtf8Text() throws Exception {
-        String text = parser.parse(new ByteArrayInputStream("退款政策：7天无理由".getBytes(StandardCharsets.UTF_8)));
+        String text = parser.parse(new ByteArrayInputStream("退款政策：7天无理由".getBytes(StandardCharsets.UTF_8))).text();
         assertThat(text).contains("退款政策");
     }
 }

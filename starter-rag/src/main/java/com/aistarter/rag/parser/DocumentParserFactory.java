@@ -16,7 +16,7 @@ public class DocumentParserFactory {
         this.parsers = parsers;
     }
 
-    public String parse(String contentType, String filename, InputStream inputStream) throws IOException {
+    public ParseResult parse(String contentType, String filename, InputStream inputStream) throws IOException {
         return parsers.stream()
                 .filter(parser -> parser.supports(contentType, filename))
                 .findFirst()

@@ -1,0 +1,19 @@
+### OCR image upload (requires OCR_ENABLED=true)
+POST http://localhost:8080/api/rag/documents
+Content-Type: multipart/form-data; boundary=----ocr
+
+------ocr
+Content-Disposition: form-data; name="file"; filename="ocr-sample.png"
+Content-Type: image/png
+
+< ./ocr-sample.png
+------ocr--
+
+### OCR RAG chat
+POST http://localhost:8080/api/rag/chat
+Content-Type: application/json
+
+{
+  "question": "退款政策是什么？",
+  "topK": 5
+}

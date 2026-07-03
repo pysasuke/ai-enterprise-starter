@@ -1,11 +1,12 @@
 # V1 验收脚本（PowerShell）
-# 用法: .\scripts\verify.ps1 [-BaseUrl http://localhost:8080] [-SkipAi] [-SkipRag] [-SkipPrompt]
+# 用法: .\scripts\verify.ps1 [-BaseUrl http://localhost:8080] [-SkipAi] [-SkipRag] [-SkipPrompt] [-SkipOcr]
 
 param(
     [string]$BaseUrl = "http://localhost:8080",
     [switch]$SkipAi,
     [switch]$SkipRag,
-    [switch]$SkipPrompt
+    [switch]$SkipPrompt,
+    [switch]$SkipOcr
 )
 
 $passed = 0
@@ -92,6 +93,30 @@ if (-not $SkipRag) {
         $r = Invoke-RestMethod -Uri "$BaseUrl/api/rag/chat" -Method Post `
             -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 180
         if (-not $r.answer) { throw "empty answer" }
+    }
+
+    if (-not $SkipOcr) {
+        if ($env:OCR_ENABLED -ne "true") {
+            Write-Host "[POST /api/rag/documents (OCR image)] SKIP (OCR_ENABLED!=true)" -ForegroundColor Yellow
+        } else {
+            Test-Endpoint "POST /api/rag/documents (OCR image)" {
+                $filePath = Join-Path $PSScriptRoot "..\examples\ocr-sample.png"
+                if (-not (Test-Path $filePath)) { throw "missing examples/ocr-sample.png" }
+                $boundary = [System.Guid]::NewGuid().ToString()
+                $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
+                $header = [System.Text.Encoding]::UTF8.GetBytes(
+                    "--$boundary`r`nContent-Disposition: form-data; name=`"file`"; filename=`"ocr-sample.png`"`r`nContent-Type: image/png`r`n`r`n")
+                $footer = [System.Text.Encoding]::UTF8.GetBytes("`r`n--$boundary--`r`n")
+                $body = New-Object byte[] ($header.Length + $fileBytes.Length + $footer.Length)
+                [Buffer]::BlockCopy($header, 0, $body, 0, $header.Length)
+                [Buffer]::BlockCopy($fileBytes, 0, $body, $header.Length, $fileBytes.Length)
+                [Buffer]::BlockCopy($footer, 0, $body, ($header.Length + $fileBytes.Length), $footer.Length)
+                $r = Invoke-RestMethod -Uri "$BaseUrl/api/rag/documents" -Method Post `
+                    -ContentType "multipart/form-data; boundary=$boundary" `
+                    -Body $body -TimeoutSec 300
+                if (-not $r.id) { throw "OCR upload failed" }
+            }
+        }
     }
 }
 
