@@ -64,6 +64,16 @@ if (-not $SkipAi) {
             -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 120
         if (-not $r.analysis) { throw "empty analysis" }
     }
+
+    Test-Endpoint "POST /api/workflows/database-analyze" {
+        $json = @{ question = "Why is querying orders by user_id slow?" } | ConvertTo-Json -Compress
+        $body = [System.Text.Encoding]::UTF8.GetBytes($json)
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/workflows/database-analyze" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 120
+        if (-not $r.analysis) { throw "empty analysis" }
+        if ($r.steps.Count -lt 3) { throw "expected at least 3 steps, got $($r.steps.Count)" }
+        if ($r.steps[0].name -ne "load-schema") { throw "first step should be load-schema" }
+    }
 }
 
 if (-not $SkipRag) {
