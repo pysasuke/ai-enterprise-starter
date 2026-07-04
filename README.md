@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · JWT · Docker
+  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · Agent Router · JWT · Docker
 </p>
 
 <p align="center">
@@ -25,6 +25,7 @@
 - **Prompt 管理**（多版本模板 + `{{var}}` 渲染，Chat/Agent/RAG 可配置）
 - Database Analyze Agent（自动读取 Schema/索引并给出 SQL 优化建议）
 - **Workflow 编排**（Java 原生步骤引擎，Database Agent 三步流水线 + 步骤追踪 API）
+- **Multi-Agent Router**（混合路由：自动选择 Chat / RAG / Database Agent）
 - JWT 认证、Redis 会话记忆
 - PostgreSQL（pgvector）+ Redis + Docker Compose 一键启动
 - Knife4j API 文档
@@ -131,7 +132,7 @@ flowchart TB
 | PUT | `/api/prompts/{key}/{type}/active` | 设置生效版本 |
 | POST | `/api/prompts/render` | 预览模板渲染 |
 
-示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)、[examples/workflow-examples.http](./examples/workflow-examples.http)
+示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)、[examples/workflow-examples.http](./examples/workflow-examples.http)、[examples/agent-route-examples.http](./examples/agent-route-examples.http)
 
 ## RAG 快速体验
 
@@ -182,6 +183,20 @@ curl -X POST http://localhost:8080/api/workflows/database-analyze \
 响应包含 `analysis` 与 `steps[]`（每步 `name`、`status`、`durationMs`、`summary`）。任一步失败时 HTTP 400，仍返回已执行步骤的追踪信息。
 
 示例见 [examples/workflow-examples.http](./examples/workflow-examples.http)。
+
+## Agent Router（多 Agent 编排）
+
+统一入口自动路由到 Chat / RAG / Database Agent（规则优先，LLM fallback）：
+
+```bash
+curl -X POST http://localhost:8080/api/workflows/agent-route \
+  -H "Content-Type: application/json" \
+  -d '{"question":"退款政策是什么？"}'
+```
+
+响应包含 `answer`、`selectedAgent`（`CHAT` / `RAG` / `DATABASE`）、`steps[]` 与可选 `metadata`（RAG 时含 `sources`）。
+
+示例见 [examples/agent-route-examples.http](./examples/agent-route-examples.http)。
 
 ## Prompt 快速体验
 

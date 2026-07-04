@@ -30,6 +30,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/chat").permitAll()
                         .requestMatchers(HttpMethod.GET, AppConstants.API_PREFIX + "/tools").permitAll()
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/agent/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/workflows/**").permitAll()
                         .requestMatchers(AppConstants.API_PREFIX + "/rag/**").permitAll()
                         .requestMatchers(AppConstants.API_PREFIX + "/prompts/**").permitAll()
                         .anyRequest().authenticated())

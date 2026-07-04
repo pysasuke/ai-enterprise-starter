@@ -1,0 +1,25 @@
+### Agent Router — Database（规则路由）
+POST http://localhost:8080/api/workflows/agent-route
+Content-Type: application/json
+
+{
+  "question": "orders表按user_id查询为什么慢？"
+}
+
+### Agent Router — RAG（规则路由）
+POST http://localhost:8080/api/workflows/agent-route
+Content-Type: application/json
+
+{
+  "question": "退款政策是什么？",
+  "topK": 5
+}
+
+### Agent Router — Chat（LLM / fallback 路由）
+POST http://localhost:8080/api/workflows/agent-route
+Content-Type: application/json
+
+{
+  "question": "你好，今天天气怎么样？",
+  "sessionId": "demo"
+}
