@@ -3,24 +3,31 @@ package com.aistarter.web.controller;
 import com.aistarter.agent.dto.DatabaseAgentRequest;
 import com.aistarter.agent.dto.DatabaseAgentResponse;
 import com.aistarter.agent.service.DatabaseAnalyzeAgent;
+import com.aistarter.ai.dto.ChatStreamRequest;
 import com.aistarter.ai.dto.ChatRequest;
 import com.aistarter.ai.dto.ChatResponse;
 import com.aistarter.ai.service.ChatService;
+import com.aistarter.ai.service.StreamChatService;
+import com.aistarter.ai.stream.SseEvent;
 import com.aistarter.auth.dto.LoginRequest;
 import com.aistarter.auth.dto.LoginResponse;
 import com.aistarter.auth.service.AuthService;
 import com.aistarter.common.constant.AppConstants;
 import com.aistarter.common.result.Result;
+import com.aistarter.mcp.dto.ToolInfo;
 import com.aistarter.mcp.service.ToolRegistryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -32,6 +39,7 @@ public class ApiController {
 
     private final AuthService authService;
     private final ChatService chatService;
+    private final StreamChatService streamChatService;
     private final ToolRegistryService toolRegistryService;
     private final DatabaseAnalyzeAgent databaseAnalyzeAgent;
 
@@ -47,9 +55,16 @@ public class ApiController {
         return chatService.chat(request);
     }
 
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "AI 聊天（SSE 流式 + Tool Calling）")
+    public Flux<ServerSentEvent<String>> chatStream(@Valid @RequestBody ChatStreamRequest request) {
+        return streamChatService.chatStream(request)
+                .map(event -> ServerSentEvent.builder(event.toJson()).build());
+    }
+
     @GetMapping("/tools")
     @Operation(summary = "Tool 列表")
-    public List<String> listTools() {
+    public List<ToolInfo> listTools() {
         return toolRegistryService.listTools();
     }
 

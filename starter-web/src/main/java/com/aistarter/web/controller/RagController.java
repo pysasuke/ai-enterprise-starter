@@ -7,10 +7,13 @@ import com.aistarter.rag.dto.RagDocumentListItem;
 import com.aistarter.rag.dto.RagUploadResponse;
 import com.aistarter.rag.service.RagChatService;
 import com.aistarter.rag.service.RagDocumentService;
+import com.aistarter.rag.service.StreamRagChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,6 +36,7 @@ public class RagController {
 
     private final RagDocumentService ragDocumentService;
     private final RagChatService ragChatService;
+    private final StreamRagChatService streamRagChatService;
 
     @PostMapping("/documents")
     @Operation(summary = "上传文档到知识库")
@@ -59,5 +64,12 @@ public class RagController {
     @Operation(summary = "RAG 知识库问答")
     public RagChatResponse chat(@Valid @RequestBody RagChatRequest request) {
         return ragChatService.chat(request);
+    }
+
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "RAG 知识库问答（SSE 流式 + Tool Calling）")
+    public Flux<ServerSentEvent<String>> chatStream(@Valid @RequestBody RagChatRequest request) {
+        return streamRagChatService.chatStream(request)
+                .map(event -> ServerSentEvent.builder(event.toJson()).build());
     }
 }

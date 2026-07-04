@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · Agent Router · JWT · Docker
+  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · Agent Router · Streaming · Tool Calling · JWT · Docker
 </p>
 
 <p align="center">
@@ -26,6 +26,7 @@
 - Database Analyze Agent（自动读取 Schema/索引并给出 SQL 优化建议）
 - **Workflow 编排**（Java 原生步骤引擎，Database Agent 三步流水线 + 步骤追踪 API）
 - **Multi-Agent Router**（混合路由：自动选择 Chat / RAG / Database Agent）
+- **Streaming Chat + Tool Calling**（SSE 流式输出，支持 queryDatabase / searchKnowledge / calculateArea）
 - JWT 认证、Redis 会话记忆
 - PostgreSQL（pgvector）+ Redis + Docker Compose 一键启动
 - Knife4j API 文档
@@ -121,18 +122,20 @@ flowchart TB
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/api/chat` | AI 聊天 |
-| GET | `/api/tools` | Tool 列表 |
+| POST | `/api/chat/stream` | AI 聊天（SSE 流式 + Tool Calling） |
+| GET | `/api/tools` | Tool 列表（含 name / description / readOnly） |
 | POST | `/api/agent/database` | Database Analyze Agent |
 | POST | `/api/auth/login` | JWT 登录 |
 | POST | `/api/rag/documents` | 上传知识库文档 |
 | GET | `/api/rag/documents` | 文档列表 |
 | POST | `/api/rag/chat` | RAG 知识库问答 |
+| POST | `/api/rag/chat/stream` | RAG 知识库问答（SSE 流式 + Tool Calling） |
 | GET | `/api/prompts` | Prompt 定义列表 |
 | POST | `/api/prompts/{key}/{type}/versions` | 创建 Prompt 新版本 |
 | PUT | `/api/prompts/{key}/{type}/active` | 设置生效版本 |
 | POST | `/api/prompts/render` | 预览模板渲染 |
 
-示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)、[examples/workflow-examples.http](./examples/workflow-examples.http)、[examples/agent-route-examples.http](./examples/agent-route-examples.http)
+示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)、[examples/workflow-examples.http](./examples/workflow-examples.http)、[examples/agent-route-examples.http](./examples/agent-route-examples.http)、[examples/stream-chat-examples.http](./examples/stream-chat-examples.http)
 
 ## RAG 快速体验
 
@@ -197,6 +200,25 @@ curl -X POST http://localhost:8080/api/workflows/agent-route \
 响应包含 `answer`、`selectedAgent`（`CHAT` / `RAG` / `DATABASE`）、`steps[]` 与可选 `metadata`（RAG 时含 `sources`）。
 
 示例见 [examples/agent-route-examples.http](./examples/agent-route-examples.http)。
+
+## Streaming Chat + Tool Calling
+
+SSE 流式输出，支持 LLM 自动调用 Tool（`queryDatabase`、`searchKnowledge`、`calculateArea`）：
+
+```bash
+curl -N -X POST http://localhost:8080/api/chat/stream \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{"message":"Calculate area of rectangle 3m by 4m"}'
+```
+
+响应为 JSON 事件流（`start` → `chunk` / `tool_call` / `tool_result` → `done`）。
+
+RAG 流式：`POST /api/rag/chat/stream`（`done.metadata.sources` 含引用片段）。
+
+Tool 列表：`GET /api/tools`
+
+示例见 [examples/stream-chat-examples.http](./examples/stream-chat-examples.http)。
 
 ## Prompt 快速体验
 

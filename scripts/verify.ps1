@@ -12,6 +12,31 @@ param(
 $passed = 0
 $failed = 0
 
+function Read-SseEvents {
+    param([string]$Url, [byte[]]$Body)
+    $request = [System.Net.HttpWebRequest]::Create($Url)
+    $request.Method = "POST"
+    $request.ContentType = "application/json; charset=utf-8"
+    $request.Accept = "text/event-stream"
+    $request.Timeout = 120000
+    $stream = $request.GetRequestStream()
+    $stream.Write($Body, 0, $Body.Length)
+    $stream.Close()
+    $response = $request.GetResponse()
+    $reader = New-Object System.IO.StreamReader($response.GetResponseStream())
+    $events = @()
+    while (-not $reader.EndOfStream) {
+        $line = $reader.ReadLine()
+        if ($line -and $line.StartsWith("data:")) {
+            $json = $line.Substring(5).Trim()
+            if ($json) {
+                $events += ($json | ConvertFrom-Json)
+            }
+        }
+    }
+    return $events
+}
+
 function Test-Endpoint {
     param([string]$Name, [scriptblock]$Block)
     Write-Host "[$Name] " -NoNewline
@@ -30,7 +55,9 @@ Write-Host "BaseUrl: $BaseUrl`n"
 
 Test-Endpoint "GET /api/tools" {
     $r = Invoke-RestMethod "$BaseUrl/api/tools"
-    if ($r.Count -lt 1) { throw "empty tools list" }
+    if ($r.Count -lt 3) { throw "expected at least 3 tools, got $($r.Count)" }
+    $names = $r | ForEach-Object { $_.name }
+    if ($names -notcontains "calculateArea") { throw "missing calculateArea tool" }
 }
 
 Test-Endpoint "POST /api/auth/login" {
@@ -102,6 +129,23 @@ if (-not $SkipAi) {
         if ($r.selectedAgent -ne "CHAT") { throw "expected CHAT, got $($r.selectedAgent)" }
         if (-not $r.answer) { throw "empty answer" }
     }
+
+    Test-Endpoint "POST /api/chat/stream (greeting)" {
+        $body = [System.Text.Encoding]::UTF8.GetBytes('{"message":"Hello"}')
+        $events = Read-SseEvents -Url "$BaseUrl/api/chat/stream" -Body $body
+        $types = $events | ForEach-Object { $_.type }
+        if ($types -notcontains "chunk") { throw "expected chunk event" }
+        if ($types -notcontains "done") { throw "expected done event" }
+    }
+
+    Test-Endpoint "POST /api/chat/stream (calculateArea tool)" {
+        $json = @{ message = "Calculate the area of a rectangle 3 meters by 4 meters." } | ConvertTo-Json -Compress
+        $body = [System.Text.Encoding]::UTF8.GetBytes($json)
+        $events = Read-SseEvents -Url "$BaseUrl/api/chat/stream" -Body $body
+        $types = $events | ForEach-Object { $_.type }
+        if ($types -notcontains "tool_call") { throw "expected tool_call event" }
+        if ($types -notcontains "tool_result") { throw "expected tool_result event" }
+    }
 }
 
 if (-not $SkipRag) {
@@ -131,6 +175,14 @@ if (-not $SkipRag) {
         $r = Invoke-RestMethod -Uri "$BaseUrl/api/rag/chat" -Method Post `
             -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 180
         if (-not $r.answer) { throw "empty answer" }
+    }
+
+    Test-Endpoint "POST /api/rag/chat/stream" {
+        $body = [System.Text.Encoding]::UTF8.GetBytes('{"question":"What is the refund policy?","topK":3}')
+        $events = Read-SseEvents -Url "$BaseUrl/api/rag/chat/stream" -Body $body
+        $types = $events | ForEach-Object { $_.type }
+        if ($types -notcontains "chunk") { throw "expected chunk event" }
+        if ($types -notcontains "done") { throw "expected done event" }
     }
 
     if (-not $SkipOcr) {

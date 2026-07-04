@@ -1,15 +1,15 @@
-package com.aistarter.rag.dto;
+package com.aistarter.ai.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class RagChatRequest {
+public class ChatStreamRequest {
 
     @NotBlank
-    private String question;
+    private String message;
 
-    private int topK = 5;
+    private String sessionId = "default";
 
     private boolean enableTools = true;
 }

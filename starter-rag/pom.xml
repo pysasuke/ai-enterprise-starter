@@ -20,6 +20,10 @@
         </dependency>
         <dependency>
             <groupId>com.aistarter</groupId>
+            <artifactId>starter-mcp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.aistarter</groupId>
             <artifactId>starter-ai</artifactId>
         </dependency>
         <dependency>

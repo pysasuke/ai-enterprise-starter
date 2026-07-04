@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/chat").permitAll()
+                        .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/chat/stream").permitAll()
                         .requestMatchers(HttpMethod.GET, AppConstants.API_PREFIX + "/tools").permitAll()
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/agent/**").permitAll()
                         .requestMatchers(HttpMethod.POST, AppConstants.API_PREFIX + "/workflows/**").permitAll()
