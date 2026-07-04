@@ -1,0 +1,15 @@
+### Database Analyze Workflow（分步编排 + 步骤追踪）
+POST http://localhost:8080/api/workflows/database-analyze
+Content-Type: application/json
+
+{
+  "question": "orders表按user_id查询为什么慢？"
+}
+
+### Database Analyze Agent（原接口，无步骤追踪）
+POST http://localhost:8080/api/agent/database
+Content-Type: application/json
+
+{
+  "question": "orders表按user_id查询为什么慢？"
+}

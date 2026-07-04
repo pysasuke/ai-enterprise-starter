@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · JWT · Docker
+  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · JWT · Docker
 </p>
 
 <p align="center">
@@ -24,6 +24,7 @@
 - **OCR 文档入库**（扫描 PDF / 图片 → DashScope OCR → RAG）
 - **Prompt 管理**（多版本模板 + `{{var}}` 渲染，Chat/Agent/RAG 可配置）
 - Database Analyze Agent（自动读取 Schema/索引并给出 SQL 优化建议）
+- **Workflow 编排**（Java 原生步骤引擎，Database Agent 三步流水线 + 步骤追踪 API）
 - JWT 认证、Redis 会话记忆
 - PostgreSQL（pgvector）+ Redis + Docker Compose 一键启动
 - Knife4j API 文档
@@ -130,7 +131,7 @@ flowchart TB
 | PUT | `/api/prompts/{key}/{type}/active` | 设置生效版本 |
 | POST | `/api/prompts/render` | 预览模板渲染 |
 
-示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)
+示例见 [examples/api-examples.http](./examples/api-examples.http)、[examples/rag-examples.http](./examples/rag-examples.http)、[examples/prompt-examples.http](./examples/prompt-examples.http)、[examples/workflow-examples.http](./examples/workflow-examples.http)
 
 ## RAG 快速体验
 
@@ -167,6 +168,20 @@ curl -F "file=@examples/ocr-sample.png" http://localhost:8080/api/rag/documents
 ```
 
 > 普通 PDF（可选中文字）仍走 PDFBox，不产生 OCR 费用。`verify.ps1` 支持 `-SkipOcr` 跳过 OCR 验收。
+
+## Workflow 编排
+
+Database Analyze 提供带步骤追踪的新端点（原 `/api/agent/database` 保持不变）：
+
+```bash
+curl -X POST http://localhost:8080/api/workflows/database-analyze \
+  -H "Content-Type: application/json" \
+  -d '{"question":"orders表按user_id查询为什么慢？"}'
+```
+
+响应包含 `analysis` 与 `steps[]`（每步 `name`、`status`、`durationMs`、`summary`）。任一步失败时 HTTP 400，仍返回已执行步骤的追踪信息。
+
+示例见 [examples/workflow-examples.http](./examples/workflow-examples.http)。
 
 ## Prompt 快速体验
 

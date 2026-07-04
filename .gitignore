@@ -37,5 +37,8 @@ replay_pid*
 docs/internal/
 docs/superpowers/
 
+# Agent skills (local only — use @git-ship-feature in Cursor)
+.cursor/skills/
+
 # RAG uploads (local only)
 uploads/rag/
