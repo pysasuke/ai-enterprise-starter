@@ -74,6 +74,34 @@ if (-not $SkipAi) {
         if ($r.steps.Count -lt 3) { throw "expected at least 3 steps, got $($r.steps.Count)" }
         if ($r.steps[0].name -ne "load-schema") { throw "first step should be load-schema" }
     }
+
+    Test-Endpoint "POST /api/workflows/agent-route (DATABASE)" {
+        $json = @{ question = "Why is querying orders by user_id slow?" } | ConvertTo-Json -Compress
+        $body = [System.Text.Encoding]::UTF8.GetBytes($json)
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/workflows/agent-route" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 120
+        if ($r.selectedAgent -ne "DATABASE") { throw "expected DATABASE, got $($r.selectedAgent)" }
+        if (-not $r.answer) { throw "empty answer" }
+        if ($r.steps.Count -lt 2) { throw "expected 2 steps" }
+    }
+
+    Test-Endpoint "POST /api/workflows/agent-route (RAG)" {
+        $json = @{ question = "What is the refund policy?" } | ConvertTo-Json -Compress
+        $body = [System.Text.Encoding]::UTF8.GetBytes($json)
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/workflows/agent-route" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 120
+        if ($r.selectedAgent -ne "RAG") { throw "expected RAG, got $($r.selectedAgent)" }
+        if (-not $r.answer) { throw "empty answer" }
+    }
+
+    Test-Endpoint "POST /api/workflows/agent-route (CHAT)" {
+        $json = @{ question = "Hello, how are you?" } | ConvertTo-Json -Compress
+        $body = [System.Text.Encoding]::UTF8.GetBytes($json)
+        $r = Invoke-RestMethod -Uri "$BaseUrl/api/workflows/agent-route" -Method Post `
+            -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 120
+        if ($r.selectedAgent -ne "CHAT") { throw "expected CHAT, got $($r.selectedAgent)" }
+        if (-not $r.answer) { throw "empty answer" }
+    }
 }
 
 if (-not $SkipRag) {
