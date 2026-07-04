@@ -4,8 +4,11 @@ import com.aistarter.agent.dto.DatabaseAgentResponse;
 import com.aistarter.agent.service.DatabaseAnalyzeAgent;
 import com.aistarter.ai.dto.ChatResponse;
 import com.aistarter.ai.service.ChatService;
+import com.aistarter.ai.service.StreamChatService;
+import com.aistarter.ai.stream.SseEvent;
 import com.aistarter.auth.dto.LoginResponse;
 import com.aistarter.auth.service.AuthService;
+import com.aistarter.mcp.dto.ToolInfo;
 import com.aistarter.mcp.service.ToolRegistryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -16,8 +19,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -40,6 +45,8 @@ class ApiControllerTest {
     @MockBean
     private ChatService chatService;
     @MockBean
+    private StreamChatService streamChatService;
+    @MockBean
     private ToolRegistryService toolRegistryService;
     @MockBean
     private DatabaseAnalyzeAgent databaseAnalyzeAgent;
@@ -56,10 +63,27 @@ class ApiControllerTest {
 
     @Test
     void toolsEndpointShouldReturnList() throws Exception {
-        when(toolRegistryService.listTools()).thenReturn(List.of("database", "filesystem"));
+        when(toolRegistryService.listTools()).thenReturn(List.of(
+                new ToolInfo("calculateArea", "Calculate area", true)));
         mockMvc.perform(get("/api/tools"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value("database"));
+                .andExpect(jsonPath("$[0].name").value("calculateArea"));
+    }
+
+    @Test
+    void chatStreamEndpointShouldReturnSseEvents() throws Exception {
+        when(streamChatService.chatStream(any())).thenReturn(Flux.just(
+                SseEvent.start("conv-1"),
+                SseEvent.chunk("hello"),
+                SseEvent.done(10, Map.of())));
+
+        mockMvc.perform(post("/api/chat/stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.TEXT_EVENT_STREAM)
+                        .content("{\"message\":\"hello\"}"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("\"type\":\"chunk\"")));
     }
 
     @Test

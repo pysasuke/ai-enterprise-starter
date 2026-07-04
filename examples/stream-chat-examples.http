@@ -1,0 +1,40 @@
+### Tool 列表
+GET http://localhost:8080/api/tools
+
+### AI 聊天（SSE 流式 + Tool Calling）
+POST http://localhost:8080/api/chat/stream
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "message": "Calculate the area of a rectangle 3 meters by 4 meters.",
+  "enableTools": true
+}
+
+### AI 聊天（仅流式，不启用 Tool）
+POST http://localhost:8080/api/chat/stream
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "message": "Hello",
+  "enableTools": false
+}
+
+### RAG 流式问答
+POST http://localhost:8080/api/rag/chat/stream
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "question": "What is the refund policy?",
+  "topK": 3,
+  "enableTools": true
+}
+
+### 预期 SSE 事件序列（示例）
+# data: {"type":"start","conversationId":"...","timestamp":...}
+# data: {"type":"chunk","content":"..."}
+# data: {"type":"tool_call","toolId":"...","toolName":"calculateArea","arguments":{...}}
+# data: {"type":"tool_result","toolId":"...","toolName":"calculateArea","success":true,"result":"12.00"}
+# data: {"type":"done","durationMs":...}
