@@ -76,6 +76,18 @@ Test-Endpoint "GET /doc.html" {
     if ($r.StatusCode -ne 200) { throw "status $($r.StatusCode)" }
 }
 
+Test-Endpoint "GET / (Admin UI)" {
+    $r = Invoke-WebRequest "$BaseUrl/" -UseBasicParsing
+    if ($r.StatusCode -ne 200) { throw "status $($r.StatusCode)" }
+    if ($r.Content -notmatch "<div id=.root.>") { throw "missing #root div" }
+}
+
+Test-Endpoint "GET /chat (SPA route)" {
+    $r = Invoke-WebRequest "$BaseUrl/chat" -UseBasicParsing
+    if ($r.StatusCode -ne 200) { throw "status $($r.StatusCode)" }
+    if ($r.Content -notmatch "<div id=.root.>") { throw "SPA forward failed" }
+}
+
 if (-not $SkipAi) {
     Test-Endpoint "POST /api/chat" {
         $body = [System.Text.Encoding]::UTF8.GetBytes('{"message":"你好"}')
