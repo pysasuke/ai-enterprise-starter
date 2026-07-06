@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · Agent Router · Streaming · Tool Calling · JWT · Docker
+  开箱即用的 Spring AI 企业开发脚手架 — Chat · RAG · Prompt · MCP · Database Agent · Workflow · Agent Router · Streaming · Tool Calling · Admin UI · JWT · Docker
 </p>
 
 <p align="center">
@@ -27,6 +27,7 @@
 - **Workflow 编排**（Java 原生步骤引擎，Database Agent 三步流水线 + 步骤追踪 API）
 - **Multi-Agent Router**（混合路由：自动选择 Chat / RAG / Database Agent）
 - **Streaming Chat + Tool Calling**（SSE 流式输出，支持 queryDatabase / searchKnowledge / calculateArea）
+- **Admin UI**（React 暗色控制台：Chat / RAG / Prompt / Tools，构建时嵌入 jar）
 - JWT 认证、Redis 会话记忆
 - PostgreSQL（pgvector）+ Redis + Docker Compose 一键启动
 - Knife4j API 文档
@@ -78,7 +79,8 @@ docker compose up -d
 
 | 服务 | 地址 |
 |------|------|
-| API | http://localhost:8080 |
+| **Admin UI** | http://localhost:8080 （自动跳转登录） |
+| API | http://localhost:8080/api |
 | Knife4j | http://localhost:8080/doc.html |
 | 默认账号 | admin / admin123 |
 
@@ -220,6 +222,27 @@ Tool 列表：`GET /api/tools`
 
 示例见 [examples/stream-chat-examples.http](./examples/stream-chat-examples.http)。
 
+## Admin UI
+
+单 jar 启动后，浏览器访问 http://localhost:8080 即可进入 Admin 控制台（默认 `admin` / `admin123`）。
+
+| 模块 | 功能 |
+|------|------|
+| Chat | SSE 流式对话 + Tool 调用可视化 |
+| RAG | 文档上传/删除 + 知识库流式问答 + Sources |
+| Prompt | 树形导航 + 版本管理 + 模板编辑/预览 |
+| Tools | 可用 Tool 列表（只读） |
+
+### 前端独立开发
+
+```bash
+cd frontend
+npm install
+npm run dev   # http://localhost:5173，/api 自动代理到 8080
+```
+
+生产构建由 Maven 自动完成（`frontend-maven-plugin` → 复制 `dist/` 到 jar 内 `static/`）。
+
 ## Prompt 快速体验
 
 应用启动后会自动 seed 默认 Prompt（`chat.system`、`database.agent`、`rag.chat`）。
@@ -253,8 +276,9 @@ curl -X PUT http://localhost:8080/api/prompts/database.agent/system/active \
 | starter-agent | Database Analyze Agent |
 | starter-rag | RAG 知识库（解析、向量、问答） |
 | starter-prompt | Prompt 版本管理与模板渲染 |
-| starter-web | Controller、全局异常、Swagger |
+| starter-web | Controller、全局异常、Swagger、静态 Admin UI |
 | starter-demo | 启动入口 |
+| frontend | React Admin UI（Vite + Tailwind，构建时嵌入 jar） |
 
 ## 本地开发
 
